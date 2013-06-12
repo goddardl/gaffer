@@ -60,7 +60,13 @@ const IECore::InternedString &Filter::defaultFilter()
 
 void Filter::setScale( float scale )
 {
-	m_scale = std::max( scale, 1.f ); 
+	m_scale = std::max( scale, 10e-4f ); 
+	m_scaledRadius = m_radius * m_scale;
+}
+
+void Filter::setScaledWidth( float pixelWidth )
+{
+	m_scale = std::max( pixelWidth/(m_radius*2.f), 10e-4f ); 
 	m_scaledRadius = m_radius * m_scale;
 }
 
@@ -88,6 +94,7 @@ FilterPtr Filter::create( const std::string &name, float scale )
 
 // Register all of the filters against their names.
 Filter::FilterRegistration<BoxFilter> BoxFilter::m_registration( "Box" );
+Filter::FilterRegistration<GaussianFilter> GaussianFilter::m_registration( "Gaussian" );
 Filter::FilterRegistration<BSplineFilter> BSplineFilter::m_registration( "BSpline" );
 Filter::FilterRegistration<BilinearFilter> BilinearFilter::m_registration( "Bilinear" );
 Filter::FilterRegistration<HermiteFilter> HermiteFilter::m_registration( "Hermite" );
@@ -98,6 +105,7 @@ Filter::FilterRegistration<LanczosFilter> LanczosFilter::m_registration( "Lanczo
 Filter::FilterRegistration<SincFilter> SincFilter::m_registration( "Sinc" );
 
 IE_CORE_DEFINERUNTIMETYPED( Filter );
+IE_CORE_DEFINERUNTIMETYPED( GaussianFilter );
 IE_CORE_DEFINERUNTIMETYPED( BSplineFilter );
 IE_CORE_DEFINERUNTIMETYPED( BilinearFilter );
 IE_CORE_DEFINERUNTIMETYPED( HermiteFilter );

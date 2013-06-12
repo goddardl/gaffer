@@ -78,6 +78,8 @@ enum TypeId
 	LanczosFilterTypeId = 110782,
 	ImageStatsTypeId = 110783,
 	ImageTransformImplementationTypeId = 110784,
+	GaussianFilterTypeId = 110785,
+	BlurTypeId = 110786,
 	
 	LastTypeId = 110849
 };

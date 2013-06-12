@@ -92,6 +92,8 @@ void bindFilters()
 	RunTimeTypedClass<Filter> bind( "Filter" );
 	bind.def( "__len__", &Filter::width );
 	bind.def( "width", &Filter::width );
+	bind.def( "getScaledWidth", &Filter::getScaledWidth );
+	bind.def( "setScaledWidth", &Filter::setScaledWidth );
 	bind.def( "getScale", &Filter::getScale );
 	bind.def( "setScale", &Filter::setScale );
 	bind.def( "tap", &Filter::tap );

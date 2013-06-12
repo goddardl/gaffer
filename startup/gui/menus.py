@@ -157,6 +157,7 @@ nodeMenu.append( "/Image/Source/Writer", GafferImage.ImageWriter, searchText = "
 nodeMenu.append( "/Image/Color/Constant", GafferImage.Constant )
 nodeMenu.append( "/Image/Color/Grade", GafferImage.Grade )
 nodeMenu.append( "/Image/Color/OpenColorIO", GafferImage.OpenColorIO )
+nodeMenu.append( "/Image/Filter/Blur", GafferImage.Blur )
 nodeMenu.append( "/Image/Filter/Merge", GafferImage.Merge )
 nodeMenu.append( "/Image/Filter/Reformat", GafferImage.Reformat )
 nodeMenu.append( "/Image/Filter/ImageTransform", GafferImage.ImageTransform )

@@ -60,6 +60,7 @@ Reformat::Reformat( const std::string &name )
 	storeIndexOfNextChild( g_firstPlugIndex );
 	addChild( new FormatPlug( "format" ) );
 	addChild( new FilterPlug( "filter" ) );
+	addChild( new FloatPlug( "size", Gaffer::Plug::In, 0.f ) );
 }
 
 Reformat::~Reformat()
@@ -86,6 +87,16 @@ const GafferImage::FilterPlug *Reformat::filterPlug() const
 	return getChild<GafferImage::FilterPlug>( g_firstPlugIndex+1 );
 }
 
+Gaffer::FloatPlug *Reformat::sizePlug()
+{
+	return getChild<Gaffer::FloatPlug>( g_firstPlugIndex+2 );
+}
+
+const Gaffer::FloatPlug *Reformat::sizePlug() const
+{
+	return getChild<Gaffer::FloatPlug>( g_firstPlugIndex+2 );
+}
+
 void Reformat::affects( const Gaffer::Plug *input, AffectedPlugsContainer &outputs ) const
 {
 	ImageProcessor::affects( input, outputs );
@@ -94,6 +105,10 @@ void Reformat::affects( const Gaffer::Plug *input, AffectedPlugsContainer &outpu
 	{
 		outputs.push_back( outPlug()->formatPlug() );
 		outputs.push_back( outPlug()->dataWindowPlug() );
+		outputs.push_back( outPlug()->channelDataPlug() );
+	}
+	else if ( input == sizePlug() )
+	{
 		outputs.push_back( outPlug()->channelDataPlug() );
 	}
 	else if ( input == filterPlug() )
@@ -115,8 +130,9 @@ bool Reformat::enabled() const
 
 	Format inFormat( inPlug()->formatPlug()->getValue() );
 	Format outFormat( formatPlug()->getValue() );
+	float size( sizePlug()->getValue() );
 		
-	return inFormat != outFormat;
+	return inFormat != outFormat || size > 0.f;
 }
 
 void Reformat::hashFormatPlug( const GafferImage::ImagePlug *output, const Gaffer::Context *context, IECore::MurmurHash &h ) const
@@ -148,6 +164,7 @@ void Reformat::hashChannelDataPlug( const GafferImage::ImagePlug *output, const 
 	filterPlug()->hash( h );
 	
 	h.append( inPlug()->dataWindowPlug()->getValue() );
+	h.append( sizePlug()->getValue() );
 	
 	Format format = formatPlug()->getValue();
 	h.append( format.getDisplayWindow() );
@@ -206,10 +223,13 @@ IECore::ConstFloatVectorDataPtr Reformat::computeChannelData( const std::string 
 	// Create some useful variables...
 	Imath::Box2i tile( tileOrigin, Imath::V2i( tileOrigin.x + ImagePlug::tileSize() - 1, tileOrigin.y + ImagePlug::tileSize() - 1 ) );
 	Imath::V2f scaleFactor( scale() );
+	float size( sizePlug()->getValue() );
 
 	// Create our filter.
-	FilterPtr f = Filter::create( filterPlug()->getValue(), 1.f / scaleFactor.y );
-	
+	FilterPtr f = Filter::create( filterPlug()->getValue() );
+	float scaledFilterHeight = size * std::max( 1.f / scaleFactor.y, 1.f );
+	f->setScaledWidth( scaledFilterHeight );
+		
 	// If we are filtering with a box filter then just don't bother filtering
 	// at all and sample instead...
 	if ( static_cast<GafferImage::TypeId>( f->typeId() ) == GafferImage::BoxFilterTypeId )
@@ -235,7 +255,8 @@ IECore::ConstFloatVectorDataPtr Reformat::computeChannelData( const std::string 
 	int sampleMinY = f->tap( (tile.min.y+.5) / scaleFactor.y );
 	int sampleMaxY = f->tap( (tile.max.y+.5) / scaleFactor.y );
 		
-	f->setScale( 1.f / scaleFactor.x );
+	float scaledFilterWidth = size * std::max( 1.f / scaleFactor.x, 1.f );
+	f->setScaledWidth( scaledFilterWidth );
 	int sampleMinX = f->tap( (tile.min.x+.5) / scaleFactor.x );
 	int sampleMaxX = f->tap( (tile.max.x+.5) / scaleFactor.x );
 	
@@ -322,7 +343,7 @@ IECore::ConstFloatVectorDataPtr Reformat::computeChannelData( const std::string 
 	
 	// Vertical Pass
 	// Build the column buffer of contributing pixels and their weights for each pixel in the column.
-	f->setScale( 1.f / scaleFactor.y );
+	f->setScaledWidth( scaledFilterHeight );
 	for ( int i = 0, contributionIdx = 0; i < ImagePlug::tileSize(); ++i, contributionIdx += fHeight )
 	{
 		float center = (tile.min.y + i + 0.5) / scaleFactor.y - sampleBox.min.y;

@@ -96,10 +96,17 @@ public :
 	/// filter to be convolved with a discreet array (such as a set of pixels).
 	//////////////////////////////////////////////////////////////
 	//@{
+	// Resizes the kernel to a width which is specified in pixels.
+	void setScaledWidth( float pixelWidth );
+	/// Returns the width of the kernel.
+	inline float getScaledWidth() const
+	{
+		return m_scaledRadius*2.;
+	};
 	/// Returns the width of the filter in pixels.
 	inline int width() const
 	{
-		return int( m_scaledRadius*2. + 1. );
+		return int( getScaledWidth() + 1. );
 	};
 	/// Returns the weight of a pixel to be convolved with the filter
 	/// given the center of the filter and the position of the pixel to be sampled.  
@@ -120,7 +127,7 @@ public :
 		return int( center - m_scaledRadius );
 	}
 	//@}
-
+	
 	//! @name Filter Registry
 	/// A set of methods to query the available Filters and create them.
 	//////////////////////////////////////////////////////////////
@@ -209,7 +216,6 @@ protected :
 
 private:
 
-		
 	/// Registration mechanism for Filter classes.
 	/// We keep a vector of the names so that we can maintain an order. 
 	static std::vector< CreatorFn >& creators()
@@ -294,24 +300,55 @@ private:
 
 };
 
-class SincFilter : public Filter
+class GaussianFilter : public Filter
 {
-
+	
 public:
 	
-	IE_CORE_DECLARERUNTIMETYPEDEXTENSION( GafferImage::SincFilter, SincFilterTypeId, Filter );
+	IE_CORE_DECLARERUNTIMETYPEDEXTENSION( GafferImage::GaussianFilter, GaussianFilterTypeId, Filter );
 
 	float weight( float delta ) const
 	{
 		delta = fabs(delta);
 		if ( delta > m_radius )
 		{
-			return 0.;
+			return 0.f;
 		}
-		if ( delta < 10e-6 )
+
+		return exp ( -delta * delta / 2.f ) / sqrt( M_PI * 2.f );
+	}
+
+protected:
+
+	GaussianFilter( float scale = 1. )
+		: Filter( 3., scale )
+	{}
+
+private:
+
+	/// Register this filter so that it can be created using the Filter::create method.
+	GAFFERIMAGE_FILTER_DECLAREFILTER( GaussianFilter )
+
+};
+
+class SincFilter : public Filter
+{
+
+	public:
+
+		IE_CORE_DECLARERUNTIMETYPEDEXTENSION( GafferImage::SincFilter, SincFilterTypeId, Filter );
+
+		float weight( float delta ) const
 		{
-			return 1.;
-		}
+			delta = fabs(delta);
+			if ( delta > m_radius )
+			{
+				return 0.;
+			}
+			if ( delta < 10e-6 )
+			{
+				return 1.;
+			}
 
 		const float PI = M_PI;
 		return sin( PI*delta ) / ( PI*delta );
