@@ -154,4 +154,16 @@ GafferUI.PlugValueWidget.registerCreator(
 	labelsAndValues = removeChannelsLabelsAndValues
 )
 
+# LensDistort
+import IECore
+
+lensModelNames = IECore.LensModel.lensModels()
+LensDistortLabelsAndValues = [ ( lensModelNames[i], i ) for i in range( 0, len( lensModelNames ) ) ]
+
+GafferUI.PlugValueWidget.registerCreator(
+	GafferImage.LensDistort.staticTypeId(),
+	"model",
+	GafferUI.EnumPlugValueWidget,
+	labelsAndValues = LensDistortLabelsAndValues
+)
 

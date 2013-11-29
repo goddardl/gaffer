@@ -1,7 +1,6 @@
 //////////////////////////////////////////////////////////////////////////
 //  
-//  Copyright (c) 2012, John Haddon. All rights reserved.
-//  Copyright (c) 2013-2014, Image Engine Design Inc. All rights reserved.
+//  Copyright (c) 2013, Image Engine Design Inc. All rights reserved.
 //  
 //  Redistribution and use in source and binary forms, with or without
 //  modification, are permitted provided that the following conditions are
@@ -35,63 +34,58 @@
 //  
 //////////////////////////////////////////////////////////////////////////
 
-#ifndef GAFFERIMAGE_TYPEIDS_H
-#define GAFFERIMAGE_TYPEIDS_H
+#ifndef GAFFERIMAGE_LENSDISTORT_H
+#define GAFFERIMAGE_LENSDISTORT_H
+
+#include "Gaffer/CompoundPlug.h"
+
+#include "GafferImage/ChannelDataProcessor.h"
 
 namespace GafferImage
 {
 
-enum TypeId
+class LensDistort : public ChannelDataProcessor
 {
-	ImagePlugTypeId = 110750,
-	ImageNodeTypeId = 110751,
-	ImageReaderTypeId = 110752,
-	ImagePrimitiveNodeTypeId = 110753,
-	DisplayTypeId = 110754,
-	GafferDisplayDriverTypeId = 110755,
-	ImageProcessorTypeId = 110756,
-	ChannelDataProcessorTypeId = 110757,
-	OpenColorIOTypeId = 110758,
-	ObjectToImageTypeId = 110759,
-	FormatDataTypeId = 110760,
-	FormatPlugTypeId = 110761,
-	MergeTypeId = 110762,
-	GradeTypeId = 110763,
-	FilterProcessorTypeId = 110764,
-	ConstantTypeId = 110765,
-	SelectTypeId = 110766,
-	ChannelMaskPlugTypeId = 110767,
-	ReformatTypeId = 110768,
-	FilterPlugTypeId = 110769,
-	ImageWriterTypeId = 110770,
-	ImageTransformTypeId = 110771,
-	FilterTypeId = 110772,
-	BoxFilterTypeId = 110773,
-	BilinearFilterTypeId = 110774,
-	SplineFilterTypeId = 110775,
-	BSplineFilterTypeId = 110776,
-	HermiteFilterTypeId = 110777,
-	CubicFilterTypeId = 110778,
-	MitchellFilterTypeId = 110779,
-	CatmullRomFilterTypeId = 110780,
-	SincFilterTypeId = 110781,
-	LanczosFilterTypeId = 110782,
-	ImageStatsTypeId = 110783,
-	ImageTransformImplementationTypeId = 110784,
-	RemoveChannelsTypeId = 110785,
-	ColorProcessorTypeId = 110786,
-	ClampTypeId = 110787,
-	ImageMixinBaseTypeId = 110788,
-	ImageContextProcessorTypeId = 110789,
-	ImageTimeWarpTypeId = 110790,
-	ImageContextVariablesTypeId = 110791,
-	ImageSwitchTypeId = 110792,
-	ImageSamplerTypeId = 110793,
-	LensDistortTypeId = 110787,
 
-	LastTypeId = 110849
+	public :
+		
+		LensDistort( const std::string &name=defaultName<LensDistort>() );
+		virtual ~LensDistort();
+
+		IE_CORE_DECLARERUNTIMETYPEDEXTENSION( GafferImage::LensDistort, LensDistortTypeId, ChannelDataProcessor );
+		
+        //! @name Plug Accessors
+        /// Returns a pointer to the node's plugs.
+        //////////////////////////////////////////////////////////////
+        //@{	
+		Gaffer::IntPlug *modelPlug();
+		const Gaffer::IntPlug *modelPlug() const;
+		Gaffer::CompoundPlug *lensParametersPlug();
+		const Gaffer::CompoundPlug *lensParametersPlug() const;
+        //@}
+		
+		virtual void affects( const Gaffer::Plug *input, AffectedPlugsContainer &outputs ) const;
+	
+	protected :
+
+		Gaffer::IntPlug *updateLensModelUiPlug();
+		const Gaffer::IntPlug *updateLensModelUiPlug() const;
+
+		virtual bool channelEnabled( const std::string &channel ) const;
+		
+		virtual void hash( const Gaffer::ValuePlug *output, const Gaffer::Context *context, IECore::MurmurHash &h ) const;
+		virtual void hashChannelData( const GafferImage::ImagePlug *output, const Gaffer::Context *context, IECore::MurmurHash &h ) const;
+		virtual void processChannelData( const Gaffer::Context *context, const ImagePlug *parent, const std::string &channelIndex, IECore::FloatVectorDataPtr outData ) const;
+		virtual void compute( Gaffer::ValuePlug *output, const Gaffer::Context *context ) const;
+
+	private :
+		
+		static size_t g_firstPlugIndex;
+		
 };
+
+IE_CORE_DECLAREPTR( LensDistort );
 
 } // namespace GafferImage
 
-#endif // GAFFERIMAGE_TYPEIDS_H
+#endif // GAFFERIMAGE_LENSDISTORT_H
