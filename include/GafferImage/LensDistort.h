@@ -37,22 +37,25 @@
 #ifndef GAFFERIMAGE_LENSDISTORT_H
 #define GAFFERIMAGE_LENSDISTORT_H
 
+#include "IECore/LensModel.h"
+
 #include "Gaffer/CompoundPlug.h"
 
-#include "GafferImage/ChannelDataProcessor.h"
+#include "GafferImage/FilterProcessor.h"
+#include "GafferImage/FilterPlug.h"
 
 namespace GafferImage
 {
 
-class LensDistort : public ChannelDataProcessor
+class LensDistort : public FilterProcessor
 {
 
 	public :
-		
+	
 		LensDistort( const std::string &name=defaultName<LensDistort>() );
 		virtual ~LensDistort();
 
-		IE_CORE_DECLARERUNTIMETYPEDEXTENSION( GafferImage::LensDistort, LensDistortTypeId, ChannelDataProcessor );
+		IE_CORE_DECLARERUNTIMETYPEDEXTENSION( GafferImage::LensDistort, LensDistortTypeId, FilterProcessor );
 		
         //! @name Plug Accessors
         /// Returns a pointer to the node's plugs.
@@ -60,26 +63,38 @@ class LensDistort : public ChannelDataProcessor
         //@{	
 		Gaffer::IntPlug *modelPlug();
 		const Gaffer::IntPlug *modelPlug() const;
+		Gaffer::IntPlug *modePlug();
+		const Gaffer::IntPlug *modePlug() const;
+		GafferImage::FilterPlug *filterPlug();
+		const GafferImage::FilterPlug *filterPlug() const;
+		Gaffer::IntPlug *edgesPlug();
+		const Gaffer::IntPlug *edgesPlug() const;
 		Gaffer::CompoundPlug *lensParametersPlug();
 		const Gaffer::CompoundPlug *lensParametersPlug() const;
         //@}
 		
 		virtual void affects( const Gaffer::Plug *input, AffectedPlugsContainer &outputs ) const;
 	
-	protected :
-
-		Gaffer::IntPlug *updateLensModelUiPlug();
-		const Gaffer::IntPlug *updateLensModelUiPlug() const;
-
-		virtual bool channelEnabled( const std::string &channel ) const;
-		
-		virtual void hash( const Gaffer::ValuePlug *output, const Gaffer::Context *context, IECore::MurmurHash &h ) const;
+	
+	protected:	
+	
 		virtual void hashChannelData( const GafferImage::ImagePlug *output, const Gaffer::Context *context, IECore::MurmurHash &h ) const;
-		virtual void processChannelData( const Gaffer::Context *context, const ImagePlug *parent, const std::string &channelIndex, IECore::FloatVectorDataPtr outData ) const;
-		virtual void compute( Gaffer::ValuePlug *output, const Gaffer::Context *context ) const;
-
-	private :
+		virtual void hashDataWindow( const GafferImage::ImagePlug *output, const Gaffer::Context *context, IECore::MurmurHash &h ) const;
 		
+		virtual bool enabled() const;
+
+		virtual Imath::Box2i computeDataWindow( const Gaffer::Context *context, const ImagePlug *parent ) const;
+		virtual IECore::ConstFloatVectorDataPtr computeChannelData( const std::string &channelName, const Imath::V2i &tileOrigin, const Gaffer::Context *context, const ImagePlug *parent ) const;
+		
+	private :
+
+		IECore::LensModelPtr lensModel() const;
+		
+		void createParameterPlugs();
+		void plugSet( Gaffer::Plug *plug );
+	
+		IECore::LensModelPtr m_lensModel;
+			
 		static size_t g_firstPlugIndex;
 		
 };

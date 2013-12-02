@@ -87,7 +87,7 @@ enum TypeId
 	ImageContextVariablesTypeId = 110791,
 	ImageSwitchTypeId = 110792,
 	ImageSamplerTypeId = 110793,
-	LensDistortTypeId = 110787,
+	LensDistortTypeId = 110794,
 
 	LastTypeId = 110849
 };
