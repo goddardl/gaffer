@@ -59,6 +59,7 @@
 #include "GafferImage/ImageTransform.h"
 #include "GafferImage/ImageStats.h"
 #include "GafferImage/ImageSampler.h"
+#include "GafferImage/LensDistort.h"
 
 #include "GafferImageBindings/FormatBinding.h"
 #include "GafferImageBindings/FormatPlugBinding.h"
@@ -130,6 +131,7 @@ BOOST_PYTHON_MODULE( _GafferImage )
 	GafferBindings::DependencyNodeClass<ImageTransform>();
 	GafferBindings::DependencyNodeClass<ImageStats>();
 	GafferBindings::DependencyNodeClass<ImageSampler>();
+	GafferBindings::DependencyNodeClass<LensDistort>();
 
 	GafferImageBindings::bindRemoveChannels();
 	GafferImageBindings::bindFormat();

@@ -34,9 +34,15 @@
 //  
 //////////////////////////////////////////////////////////////////////////
 
+#include "IECore/NumericParameter.h"
+
+#include "boost/bind.hpp"
+#include "boost/algorithm/string/replace.hpp"
+
 #include "Gaffer/Context.h"
 
 #include "GafferImage/LensDistort.h"
+#include "GafferImage/Sampler.h"
 
 using namespace IECore;
 using namespace Gaffer;
@@ -49,242 +55,265 @@ IE_CORE_DEFINERUNTIMETYPED( LensDistort );
 size_t LensDistort::g_firstPlugIndex = 0;
 
 LensDistort::LensDistort( const std::string &name )
-	:	ChannelDataProcessor( name )
+	:	FilterProcessor( name )
 {
 	storeIndexOfNextChild( g_firstPlugIndex );
-	addChild( new Color3fPlug( "blackPoint" ) );
-	addChild( new Color3fPlug( "whitePoint", Gaffer::Plug::In, Imath::V3f(1.f, 1.f, 1.f) ) );
-	addChild( new Color3fPlug( "lift" ) );
-	addChild( new Color3fPlug( "gain", Gaffer::Plug::In, Imath::V3f(1.f, 1.f, 1.f) ) );
-	addChild( new Color3fPlug( "multiply", Gaffer::Plug::In, Imath::V3f(1.f, 1.f, 1.f) ) );
-	addChild( new Color3fPlug( "offset" ) );
-	addChild( new Color3fPlug( "gamma", Gaffer::Plug::In, Imath::Color3f( 1.0f ), Imath::Color3f( 0.0f ) ) );
-	addChild( new BoolPlug( "blackClamp", Gaffer::Plug::In, true ) );
-	addChild( new BoolPlug( "whiteClamp" ) );
+	addChild( new IntPlug( "model" ) );
+	addChild( new IntPlug( "mode" ) );
+	addChild( new FilterPlug( "filter" ) );
+	addChild( new IntPlug( "edges" ) );
+	addChild( new CompoundPlug( "lensParameters" ) );
+	
+	createParameterPlugs();
+	plugSetSignal().connect( boost::bind( &LensDistort::plugSet, this, ::_1 ) );
 }
 
 LensDistort::~LensDistort()
 {
 }
 
-Gaffer::Color3fPlug *LensDistort::blackPointPlug()
+Gaffer::IntPlug *LensDistort::modelPlug()
 {
-	return getChild<Color3fPlug>( g_firstPlugIndex );
+	return getChild<IntPlug>( g_firstPlugIndex );
 }
 
-const Gaffer::Color3fPlug *LensDistort::blackPointPlug() const
+const Gaffer::IntPlug *LensDistort::modelPlug() const
 {
-	return getChild<Color3fPlug>( g_firstPlugIndex );
+	return getChild<IntPlug>( g_firstPlugIndex );
 }
 
-Gaffer::Color3fPlug *LensDistort::whitePointPlug()
+Gaffer::IntPlug *LensDistort::modePlug()
 {
-	return getChild<Color3fPlug>( g_firstPlugIndex+1 );
+	return getChild<IntPlug>( g_firstPlugIndex + 1 );
 }
 
-const Gaffer::Color3fPlug *LensDistort::whitePointPlug() const
+const Gaffer::IntPlug *LensDistort::modePlug() const
 {
-	return getChild<Color3fPlug>( g_firstPlugIndex+1 );
+	return getChild<IntPlug>( g_firstPlugIndex + 1 );
 }
 
-Gaffer::Color3fPlug *LensDistort::liftPlug()
+GafferImage::FilterPlug *LensDistort::filterPlug()
 {
-	return getChild<Color3fPlug>( g_firstPlugIndex+2 );
+	return getChild<GafferImage::FilterPlug>( g_firstPlugIndex + 2 );
 }
 
-const Gaffer::Color3fPlug *LensDistort::liftPlug() const
+const GafferImage::FilterPlug *LensDistort::filterPlug() const
 {
-	return getChild<Color3fPlug>( g_firstPlugIndex+2 );
+	return getChild<GafferImage::FilterPlug>( g_firstPlugIndex + 2 );
 }
 
-Gaffer::Color3fPlug *LensDistort::gainPlug()
+Gaffer::IntPlug *LensDistort::edgesPlug()
 {
-	return getChild<Color3fPlug>( g_firstPlugIndex+3 );
+	return getChild<IntPlug>( g_firstPlugIndex + 3 );
 }
 
-const Gaffer::Color3fPlug *LensDistort::gainPlug() const
+const Gaffer::IntPlug *LensDistort::edgesPlug() const
 {
-	return getChild<Color3fPlug>( g_firstPlugIndex+3 );
+	return getChild<IntPlug>( g_firstPlugIndex + 3 );
 }
 
-Gaffer::Color3fPlug *LensDistort::multiplyPlug()
+Gaffer::CompoundPlug *LensDistort::lensParametersPlug()
 {
-	return getChild<Color3fPlug>( g_firstPlugIndex+4 );
+	return getChild<CompoundPlug>( g_firstPlugIndex + 4 );
 }
 
-const Gaffer::Color3fPlug *LensDistort::multiplyPlug() const
+const Gaffer::CompoundPlug *LensDistort::lensParametersPlug() const
 {
-	return getChild<Color3fPlug>( g_firstPlugIndex+4 );
+	return getChild<CompoundPlug>( g_firstPlugIndex + 4 );
 }
 
-Gaffer::Color3fPlug *LensDistort::offsetPlug()
+IECore::LensModelPtr LensDistort::lensModel() const
 {
-	return getChild<Color3fPlug>( g_firstPlugIndex+5 );
-}
-
-const Gaffer::Color3fPlug *LensDistort::offsetPlug() const
-{
-	return getChild<Color3fPlug>( g_firstPlugIndex+5 );
-}
-
-Gaffer::Color3fPlug *LensDistort::gammaPlug()
-{
-	return getChild<Color3fPlug>( g_firstPlugIndex+6 );
-}
-
-const Gaffer::Color3fPlug *LensDistort::gammaPlug() const
-{
-	return getChild<Color3fPlug>( g_firstPlugIndex+6 );
-}
-
-Gaffer::BoolPlug *LensDistort::blackClampPlug()
-{
-	return getChild<BoolPlug>( g_firstPlugIndex+7 );
-}
-
-const Gaffer::BoolPlug *LensDistort::blackClampPlug() const
-{
-	return getChild<BoolPlug>( g_firstPlugIndex+7 );
-}
-
-Gaffer::BoolPlug *LensDistort::whiteClampPlug()
-{
-	return getChild<BoolPlug>( g_firstPlugIndex+8 );
-}
-
-const Gaffer::BoolPlug *LensDistort::whiteClampPlug() const
-{
-	return getChild<BoolPlug>( g_firstPlugIndex+8 );
-}
-
-bool LensDistort::channelEnabled( const std::string &channel ) const 
-{
-	if ( !ChannelDataProcessor::channelEnabled( channel ) )
+	unsigned int model = modelPlug()->getValue();
+	if( model >= IECore::LensModel::lensModels().size() )
 	{
-		return false;
+		model = 0;
+	}
+
+	IECore::LensModelPtr lens = IECore::LensModel::create( IECore::LensModel::lensModels()[model] );
+	
+	std::vector<IECore::ParameterPtr> params( lens->parameters()->orderedParameters() );
+	CompoundPlug::ChildContainer lensParameterPlugs( lensParametersPlug()->children() );
+
+	assert( lensParameterPlugs.size() == params.size() );
+
+	CompoundPlug::ChildIterator pIt( lensParameterPlugs.begin() );
+	for( std::vector<IECore::ParameterPtr>::const_iterator it( params.begin() ); it != params.end(); ++it, ++pIt )
+	{
+		if( (*it)->typeId() == DoubleParameterTypeId )
+		{
+			lens->parameters()->parameter<IECore::DoubleParameter>( (*it)->name() )->setNumericValue( runTimeCast<FloatPlug>( (*pIt) )->getValue() );
+		}
+		else if( (*it)->typeId() == FloatParameterTypeId )
+		{
+			lens->parameters()->parameter<IECore::FloatParameter>( (*it)->name() )->setNumericValue( runTimeCast<FloatPlug>( (*pIt) )->getValue() );
+		}
+		else if( (*it)->typeId() == IntParameterTypeId )
+		{
+			lens->parameters()->parameter<IECore::IntParameter>( (*it)->name() )->setNumericValue( runTimeCast<IntPlug>( (*pIt) )->getValue() );
+		}
 	}
 	
-	int channelIndex = GafferImage::ChannelMaskPlug::channelIndex( channel );
-	
-	// Never bother to process the alpha channel.
-	if ( channelIndex == 3 ) return false;
+	lens->validate();
 
-	// And don't bother to process identity transforms or invalid gammas
-	float a, b, gamma;
-	parameters( channelIndex, a, b, gamma );
-	
-	if( gamma == 0.0f )
+	return lens;
+}
+
+void LensDistort::createParameterPlugs()
+{
+	unsigned int model = modelPlug()->getValue();
+	if( model >= IECore::LensModel::lensModels().size() )
 	{
-		// this would result in division by zero,
-		// so it must disable processing.
-		return false;
+		model = 0;
 	}
+
+	IECore::LensModelPtr lens = IECore::LensModel::create( IECore::LensModel::lensModels()[model] );
+
+	// Remove any existing parameter plugs.
+	lensParametersPlug()->clearChildren();	
 	
-	return gamma != 1.0f || a != 1.0f || b != 0.0f;
+	// Get the parameters from our lens model.
+	std::vector<IECore::ParameterPtr> params( lens->parameters()->orderedParameters() );
+
+	// Add appropriate plugs for each of the lens model parameters.		
+	for( std::vector<IECore::ParameterPtr>::const_iterator it( params.begin() ); it != params.end(); ++it )
+	{
+		std::string validName( boost::algorithm::replace_all_copy( (*it)->name(), "-", "" ) );
+		if( (*it)->typeId() == DoubleParameterTypeId )
+		{
+			float defaultValue = runTimeCast<const IECore::DoubleData>( (*it)->defaultValue() )->readable();
+			lensParametersPlug()->addChild( new FloatPlug( validName, Plug::In, defaultValue, Imath::limits<float>::min(), Imath::limits<float>::max(), Plug::Default | Plug::Dynamic ) );
+		}
+		else if( (*it)->typeId() == FloatParameterTypeId )
+		{
+			float defaultValue = runTimeCast<const IECore::FloatData>( (*it)->defaultValue() )->readable();
+			lensParametersPlug()->addChild( new FloatPlug( validName, Plug::In, defaultValue, Imath::limits<float>::min(), Imath::limits<float>::max(), Plug::Default | Plug::Dynamic ) );
+		}
+		else if( (*it)->typeId() == IntParameterTypeId )
+		{
+			int defaultValue = runTimeCast<const IECore::IntData>( (*it)->defaultValue() )->readable();
+			lensParametersPlug()->addChild( new IntPlug( validName, Plug::In, defaultValue, Imath::limits<int>::min(), Imath::limits<int>::max(), Plug::Default | Plug::Dynamic ) );
+		}
+	}
+}
+
+bool LensDistort::enabled() const 
+{
+	/// \todo: Here we should check to see if the plugs have the default values of the lens model and if so, disable the node.
+	return true;
+}
+
+void LensDistort::plugSet( Gaffer::Plug *plug )
+{
+	if( plug == modelPlug() )
+	{
+		createParameterPlugs();
+	}
 }
 
 void LensDistort::affects( const Gaffer::Plug *input, AffectedPlugsContainer &outputs ) const
 {
-	ChannelDataProcessor::affects( input, outputs );
-
-	// Process the children of the compound plugs. 
-	for( unsigned int i = 0; i < 3; ++i )
+	FilterProcessor::affects( input, outputs );
+	
+	CompoundPlug::ChildContainer lensParameterPlugs( lensParametersPlug()->children() );
+	for( CompoundPlug::ChildIterator it( lensParameterPlugs.begin() ); it != lensParameterPlugs.end(); ++it )
 	{
-		if( input == blackPointPlug()->getChild(i) ||
-				input == whitePointPlug()->getChild(i) ||
-				input == liftPlug()->getChild(i) ||
-				input == gainPlug()->getChild(i) ||
-				input == multiplyPlug()->getChild(i) ||
-				input == offsetPlug()->getChild(i) ||
-				input == gammaPlug()->getChild(i)
-		  )
+		if( input == *it )
 		{
-			outputs.push_back( outPlug()->channelDataPlug() );	
+			outputs.push_back( outPlug()->channelDataPlug() );
+			outputs.push_back( outPlug()->dataWindowPlug() );
 			return;
 		}
 	}
 
-	// Process all other plugs.
-	if( input == inPlug()->channelDataPlug() ||
-			input == blackClampPlug() ||
-			input == whiteClampPlug()
-	  )
+	if( input == modelPlug() || input == modePlug() || input == filterPlug() || input == edgesPlug() )
 	{
 		outputs.push_back( outPlug()->channelDataPlug() );	
 		return;
 	}
+}
 
+void LensDistort::hashDataWindow( const GafferImage::ImagePlug *output, const Gaffer::Context *context, IECore::MurmurHash &h ) const
+{
+	FilterProcessor::hashDataWindow( output, context, h );
+	
+	modelPlug()->hash( h );
+	modePlug()->hash( h );
+	lensParametersPlug()->hash( h );
 }
 
 void LensDistort::hashChannelData( const GafferImage::ImagePlug *output, const Gaffer::Context *context, IECore::MurmurHash &h ) const
 {
-	ChannelDataProcessor::hashChannelData( output, context, h );
+	FilterProcessor::hashChannelData( output, context, h );
 
 	inPlug()->channelDataPlug()->hash( h );
-
-	std::string channelName = context->get<std::string>( ImagePlug::channelNameContextName );
-	int channelIndex = ChannelMaskPlug::channelIndex( channelName );
-	if( channelIndex >= 0 and channelIndex < 3 )
-	{
-		/// \todo The channelIndex tests above might be guaranteed true by
-		/// the effects of channelEnabled() anyway, but it's not clear from
-		/// the base class documentation.
-		blackPointPlug()->getChild( channelIndex )->hash( h );
-		whitePointPlug()->getChild( channelIndex )->hash( h );
-		liftPlug()->getChild( channelIndex )->hash( h );
-		gainPlug()->getChild( channelIndex )->hash( h );
-		multiplyPlug()->getChild( channelIndex )->hash( h );
-		offsetPlug()->getChild( channelIndex )->hash( h );
-		gammaPlug()->getChild( channelIndex )->hash( h );
-		blackClampPlug()->hash( h );
-		whiteClampPlug()->hash( h );
-	}
+	filterPlug()->hash( h );
+	modelPlug()->hash( h );
+	modePlug()->hash( h );
+	edgesPlug()->hash( h );
+	lensParametersPlug()->hash( h );
+}
+		
+Imath::Box2i LensDistort::computeDataWindow( const Gaffer::Context *context, const ImagePlug *parent ) const
+{
+	IECore::LensModelPtr lens = lensModel();
+	Format f = inPlug()->formatPlug()->getValue();
+	Imath::Box2i box( lens->bounds( modePlug()->getValue(), inPlug()->dataWindowPlug()->getValue(), f.width(), f.height() ) );
+	
+	return box;
 }
 
-void LensDistort::processChannelData( const Gaffer::Context *context, const ImagePlug *parent, const std::string &channel, FloatVectorDataPtr outData ) const
+IECore::ConstFloatVectorDataPtr LensDistort::computeChannelData( const std::string &channelName, const Imath::V2i &tileOrigin, const Gaffer::Context *context, const ImagePlug *parent ) const
 {
-	// Calculate the valid data window that we are to merge.
-	const int dataWidth = ImagePlug::tileSize()*ImagePlug::tileSize();
+	Format format = inPlug()->formatPlug()->getValue();
+	const int width = format.width();
+	const int height = format.height();
+	const int mode = modePlug()->getValue();
+	const GafferImage::Sampler::BoundingMode edgesMode = static_cast<GafferImage::Sampler::BoundingMode>( edgesPlug()->getValue() );
+		
+	// Allocate the new tile
+	FloatVectorDataPtr outDataPtr = new FloatVectorData;
+	std::vector<float> &out = outDataPtr->writable();
+	out.resize( ImagePlug::tileSize() * ImagePlug::tileSize() );
 
-	// Do some pre-processing.
-	float A, B, gamma;
-	parameters( ChannelMaskPlug::channelIndex( channel ), A, B, gamma );
-	const float invGamma = 1. / gamma;
-	const bool whiteClamp = whiteClampPlug()->getValue();	
-	const bool blackClamp = blackClampPlug()->getValue();	
+	// Get our lens model.
+	IECore::LensModelPtr lens = lensModel();
+	
+	// Work out the area we need to sample.
+	Imath::Box2i tile( tileOrigin, Imath::V2i( tileOrigin.x + ImagePlug::tileSize() - 1, tileOrigin.y + ImagePlug::tileSize() - 1 ) );
+	Imath::Box2i sampleBox( lens->bounds( mode == IECore::LensModel::Distort ? IECore::LensModel::Undistort : IECore::LensModel::Distort, tile, width, height ) );
 
-	// Get some useful pointers.	
-	float *outPtr = &(outData->writable()[0]);
-	const float *END = outPtr + dataWidth;
-
-	while (outPtr != END)
+	// Create our filter.
+	FilterPtr filter = Filter::create( filterPlug()->getValue(), 1. );
+	
+	Sampler sampler( inPlug(), channelName, sampleBox, filter, edgesMode );
+	Imath::V2d dp;
+	for ( int y = 0; y < ImagePlug::tileSize(); ++y )
 	{
-		// Calculate the colour of the graded pixel.
-		float colour = *outPtr;	// As the input has been copied to outData, grab the input colour from there.
-		const float c = A * colour + B;
-		colour = ( c >= 0.f && invGamma != 1.f ? (float)pow( c, invGamma ) : c );
+		double v = double( y + tileOrigin[1] ) / height;
+		float *row = &out[ y * ImagePlug::tileSize() ];
+		for ( int x = 0; x < ImagePlug::tileSize(); ++x )
+		{
+			double u = double( x + tileOrigin[0] ) / width;
+	
+			Imath::V2d p(u, v);
+			if( mode == IECore::LensModel::Undistort )
+			{
+				dp = lens->distort( p );
+			}
+			else
+			{
+				dp = lens->undistort( p );
+			}
+			
+			dp.x *= width;
+			dp.y *= height;
 
-		// Clamp the white and blacks if necessary.
-		if ( blackClamp && colour < 0.f ) colour = 0.f;
-		if ( whiteClamp && colour > 1.f ) colour = 1.f;
-
-		// Write back the result.
-		*outPtr++ = colour;	
+			row[x] = sampler.sample( float( dp.x ), float( dp.y ) );
+		}
 	}
-}
 
-void LensDistort::parameters( size_t channelIndex, float &a, float &b, float &gamma ) const
-{
-	gamma = gammaPlug()->getChild( channelIndex )->getValue();
-	const float multiply = multiplyPlug()->getChild( channelIndex )->getValue();
-	const float gain = gainPlug()->getChild( channelIndex )->getValue();
-	const float lift = liftPlug()->getChild( channelIndex )->getValue();
-	const float whitePoint = whitePointPlug()->getChild( channelIndex )->getValue();
-	const float blackPoint = blackPointPlug()->getChild( channelIndex )->getValue();
-	const float offset = offsetPlug()->getChild( channelIndex )->getValue();
-
-	a = multiply * ( gain - lift ) / ( whitePoint - blackPoint );
-	b = offset + lift - a * blackPoint;
+	return outDataPtr;
 }
 
 } // namespace GafferImage

@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////
 //  
-//  Copyright (c) 2014, Luke Goddard. All rights reserved.
+//  Copyright (c) 2013, Image Engine Design Inc. All rights reserved.
 //  
 //  Redistribution and use in source and binary forms, with or without
 //  modification, are permitted provided that the following conditions are
@@ -34,75 +34,73 @@
 //  
 //////////////////////////////////////////////////////////////////////////
 
-#ifndef GAFFERIMAGE_GRADE_H
-#define GAFFERIMAGE_GRADE_H
+#ifndef GAFFERIMAGE_LENSDISTORT_H
+#define GAFFERIMAGE_LENSDISTORT_H
 
-#include "Gaffer/CompoundNumericPlug.h"
+#include "IECore/LensModel.h"
 
-#include "GafferImage/ChannelDataProcessor.h"
+#include "Gaffer/CompoundPlug.h"
+
+#include "GafferImage/FilterProcessor.h"
+#include "GafferImage/FilterPlug.h"
 
 namespace GafferImage
 {
 
-/// The grade node implements the common grade operation to the RGB channels of the input.
-/// The computation performed is:
-/// A = multiply * (gain - lift) / (whitePoint - blackPoint)
-/// B = offset + lift - A * blackPoint
-/// output = pow( A * input + B, 1/gamma )
-//
-class Grade : public ChannelDataProcessor
+class LensDistort : public FilterProcessor
 {
 
 	public :
-		
-		Grade( const std::string &name=defaultName<Grade>() );
-		virtual ~Grade();
+	
+		LensDistort( const std::string &name=defaultName<LensDistort>() );
+		virtual ~LensDistort();
 
-		IE_CORE_DECLARERUNTIMETYPEDEXTENSION( GafferImage::Grade, GradeTypeId, ChannelDataProcessor );
+		IE_CORE_DECLARERUNTIMETYPEDEXTENSION( GafferImage::LensDistort, LensDistortTypeId, FilterProcessor );
 		
         //! @name Plug Accessors
         /// Returns a pointer to the node's plugs.
         //////////////////////////////////////////////////////////////
         //@{	
-		Gaffer::Color3fPlug *blackPointPlug();
-		const Gaffer::Color3fPlug *blackPointPlug() const;
-		Gaffer::Color3fPlug *whitePointPlug();
-		const Gaffer::Color3fPlug *whitePointPlug() const;
-		Gaffer::Color3fPlug *liftPlug();
-		const Gaffer::Color3fPlug *liftPlug() const;
-		Gaffer::Color3fPlug *gainPlug();
-		const Gaffer::Color3fPlug *gainPlug() const;
-		Gaffer::Color3fPlug *multiplyPlug();
-		const Gaffer::Color3fPlug *multiplyPlug() const;
-		Gaffer::Color3fPlug *offsetPlug();
-		const Gaffer::Color3fPlug *offsetPlug() const;
-		Gaffer::Color3fPlug *gammaPlug();
-		const Gaffer::Color3fPlug *gammaPlug() const;
-		Gaffer::BoolPlug *blackClampPlug();
-		const Gaffer::BoolPlug *blackClampPlug() const;
-		Gaffer::BoolPlug *whiteClampPlug();
-		const Gaffer::BoolPlug *whiteClampPlug() const;
+		Gaffer::IntPlug *modelPlug();
+		const Gaffer::IntPlug *modelPlug() const;
+		Gaffer::IntPlug *modePlug();
+		const Gaffer::IntPlug *modePlug() const;
+		GafferImage::FilterPlug *filterPlug();
+		const GafferImage::FilterPlug *filterPlug() const;
+		Gaffer::IntPlug *edgesPlug();
+		const Gaffer::IntPlug *edgesPlug() const;
+		Gaffer::CompoundPlug *lensParametersPlug();
+		const Gaffer::CompoundPlug *lensParametersPlug() const;
         //@}
 		
 		virtual void affects( const Gaffer::Plug *input, AffectedPlugsContainer &outputs ) const;
 	
-	protected :
-
-		virtual bool channelEnabled( const std::string &channel ) const;
-		
+	
+	protected:	
+	
 		virtual void hashChannelData( const GafferImage::ImagePlug *output, const Gaffer::Context *context, IECore::MurmurHash &h ) const;
-		virtual void processChannelData( const Gaffer::Context *context, const ImagePlug *parent, const std::string &channelIndex, IECore::FloatVectorDataPtr outData ) const;
+		virtual void hashDataWindow( const GafferImage::ImagePlug *output, const Gaffer::Context *context, IECore::MurmurHash &h ) const;
+		
+		virtual bool enabled() const;
 
+		virtual Imath::Box2i computeDataWindow( const Gaffer::Context *context, const ImagePlug *parent ) const;
+		virtual IECore::ConstFloatVectorDataPtr computeChannelData( const std::string &channelName, const Imath::V2i &tileOrigin, const Gaffer::Context *context, const ImagePlug *parent ) const;
+		
 	private :
+
+		IECore::LensModelPtr lensModel() const;
 		
-		void parameters( size_t channelIndex, float &a, float &b, float &gamma ) const;
-		
+		void createParameterPlugs();
+		void plugSet( Gaffer::Plug *plug );
+	
+		IECore::LensModelPtr m_lensModel;
+			
 		static size_t g_firstPlugIndex;
 		
 };
 
-IE_CORE_DECLAREPTR( Grade );
+IE_CORE_DECLAREPTR( LensDistort );
 
 } // namespace GafferImage
 
-#endif // GAFFERIMAGE_GRADE_H
+#endif // GAFFERIMAGE_LENSDISTORT_H

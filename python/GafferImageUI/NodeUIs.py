@@ -160,4 +160,38 @@ GafferUI.PlugValueWidget.registerCreator(
 	labelsAndValues = removeChannelsLabelsAndValues
 )
 
+# LensDistort
+import IECore
+import VersionControl
+VersionControl.setVersion('IEOcular','0')
+import IEOcular
+lensModelNames = IECore.LensModel.lensModels()
+LensDistortLabelsAndValues = [ ( lensModelNames[i], i ) for i in range( 0, len( lensModelNames ) ) ]
+
+GafferUI.PlugValueWidget.registerCreator(
+	GafferImage.LensDistort.staticTypeId(),
+	"mode",
+	GafferUI.EnumPlugValueWidget,
+	labelsAndValues = [ ( "Distort", IECore.LensModel.Distort ), ( "Undistort", IECore.LensModel.Undistort ) ]
+)
+
+GafferUI.PlugValueWidget.registerCreator(
+	GafferImage.LensDistort.staticTypeId(),
+	"edges",
+	GafferUI.EnumPlugValueWidget,
+	labelsAndValues = [ ( "Black", GafferImage.BoundingMode.Black ), ( "Clamp", GafferImage.BoundingMode.Clamp ) ]
+)
+
+GafferUI.PlugValueWidget.registerCreator(
+	GafferImage.LensDistort.staticTypeId(),
+	"model",
+	GafferUI.EnumPlugValueWidget,
+	labelsAndValues = LensDistortLabelsAndValues
+)
+
+GafferUI.PlugValueWidget.registerCreator(
+	GafferImage.LensDistort.staticTypeId(),
+	"lensParameters",
+	GafferUI.CompoundPlugValueWidget,
+)
 

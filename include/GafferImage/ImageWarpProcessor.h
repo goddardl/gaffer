@@ -62,6 +62,8 @@ class ImageWarpProcessor : public ImageProcessor
 		//@{
 			GafferImage::FilterPlug *filterPlug();
 			const GafferImage::FilterPlug *filterPlug() const;
+			//Gaffer::IntPlug *edgesPlug();
+			//const Gaffer::IntPlug *edgesPlug() const;
 		//@}
 		
 	protected :
