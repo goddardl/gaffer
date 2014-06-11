@@ -34,8 +34,8 @@
 //  
 //////////////////////////////////////////////////////////////////////////
 
-#ifndef GAFFERIMAGE_CHANNELDATAPROCESSOR_H
-#define GAFFERIMAGE_CHANNELDATAPROCESSOR_H
+#ifndef GAFFERIMAGE_IMAGEWARPPROCESSOR_H
+#define GAFFERIMAGE_IMAGEWARPPROCESSOR_H
 
 #include "GafferImage/ImageProcessor.h"
 #include "GafferImage/FilterPlug.h"
@@ -115,4 +115,4 @@ IE_CORE_DECLAREPTR( ImageWarpProcessor )
 
 } // namespace GafferImage
 
-#endif // GAFFERIMAGE_CHANNELDATAPROCESSOR_H
+#endif // GAFFERIMAGE_IMAGEWARPPROCESSOR_H

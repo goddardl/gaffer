@@ -90,12 +90,15 @@ void ImageWarpProcessor::affects( const Gaffer::Plug *input, AffectedPlugsContai
 
 IECore::ConstFloatVectorDataPtr ImageWarpProcessor::computeChannelData( const std::string &channelName, const Imath::V2i &tileOrigin, const Gaffer::Context *context, const ImagePlug *parent ) const
 {
+	std::cerr << "Compute channel data" << std::endl;
 	IECore::FloatVectorDataPtr outDataPtr = new IECore::FloatVectorData;
 	std::vector<float> &out = outDataPtr->writable();
 	out.resize( ImagePlug::tileSize() * ImagePlug::tileSize() );
 	
 	Imath::Box2i tile( tileOrigin, Imath::V2i( GafferImage::ImagePlug::tileSize() - 1 ) );
 	Imath::Box2i sampleBox( warp( tile ) );
+	std::cerr << "Tile " << tile.min << ", " << tile.max  << std::endl;
+	std::cerr << "Warped Tile " << sampleBox.min << ", " << sampleBox.max  << std::endl;
 	
 	GafferImage::FilterPtr filter = GafferImage::Filter::create( filterPlug()->getValue() );
 	Sampler sampler( inPlug(), channelName, sampleBox, filter );
@@ -119,6 +122,7 @@ void ImageWarpProcessor::hashChannelData( const GafferImage::ImagePlug *output, 
 	
 	Sampler sampler( inPlug(), channelName, sampleBox );
 	h.append( sampleBox );
+	h.append( tileOrigin );
 }
 
 Imath::Box2i ImageWarpProcessor::warp( const Imath::Box2i box ) const
@@ -147,7 +151,7 @@ Imath::Box2i ImageWarpProcessor::warp( const Imath::Box2i box ) const
 		}
 	}
 	
-	for( int j = box.min.y; j <= box.max.y; j++ )
+	for( int j = box.min.y; j <= box.max.y; ++j )
 	{
 		for( int pass = 0; pass < 2; ++pass )
 		{

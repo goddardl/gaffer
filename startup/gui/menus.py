@@ -224,7 +224,7 @@ nodeMenu.append( "/Image/Context/Time Warp", GafferImage.ImageTimeWarp, searchTe
 nodeMenu.append( "/Image/Context/Variables", GafferImage.ImageContextVariables, searchText = "ImageContextVariables"  )
 nodeMenu.append( "/Image/Utility/Stats", GafferImage.ImageStats, searchText = "ImageStats" )
 nodeMenu.append( "/Image/Utility/Sampler", GafferImage.ImageSampler, searchText = "ImageSampler" )
-nodeMenu.append( "/Image/Warp/LensDistort", GafferImage.LensDistort, searchText = "LensDistort" )
+nodeMenu.append( "/Image/Warp/LatLong", GafferImage.LatLong, searchText = "LatLong" )
 
 # OSL nodes
 

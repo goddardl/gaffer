@@ -59,7 +59,8 @@
 #include "GafferImage/ImageTransform.h"
 #include "GafferImage/ImageStats.h"
 #include "GafferImage/ImageSampler.h"
-#include "GafferImage/LensDistort.h"
+#include "GafferImage/LatLong.h"
+#include "GafferImage/ImageWarpProcessor.h"
 
 #include "GafferImageBindings/FormatBinding.h"
 #include "GafferImageBindings/FormatPlugBinding.h"
@@ -119,6 +120,7 @@ BOOST_PYTHON_MODULE( _GafferImage )
 	GafferBindings::DependencyNodeClass<ImageProcessor>();
 	GafferBindings::DependencyNodeClass<FilterProcessor>();
 	GafferBindings::DependencyNodeClass<ChannelDataProcessor>();
+	GafferBindings::DependencyNodeClass<ImageWarpProcessor>();
 	GafferBindings::DependencyNodeClass<ColorProcessor>();
 	GafferBindings::DependencyNodeClass<OpenColorIO>();
 	GafferBindings::DependencyNodeClass<ObjectToImage>();
@@ -131,7 +133,7 @@ BOOST_PYTHON_MODULE( _GafferImage )
 	GafferBindings::DependencyNodeClass<ImageTransform>();
 	GafferBindings::DependencyNodeClass<ImageStats>();
 	GafferBindings::DependencyNodeClass<ImageSampler>();
-	GafferBindings::DependencyNodeClass<LensDistort>();
+	GafferBindings::DependencyNodeClass<LatLong>();
 
 	GafferImageBindings::bindRemoveChannels();
 	GafferImageBindings::bindFormat();

@@ -88,7 +88,7 @@ enum TypeId
 	ImageSwitchTypeId = 110792,
 	ImageSamplerTypeId = 110793,
 	ImageWarpProcessorTypeId = 110794,
-	LensDistortTypeId = 110795,
+	LatLongTypeId = 110795,
 
 	LastTypeId = 110849
 };
